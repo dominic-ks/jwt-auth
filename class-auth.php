@@ -681,11 +681,21 @@ class Auth {
 		$payload = $this->validate_token( false );
 
 		// If $payload is an error response, then the client did not send a token,
-		// or the token is invalid, the client uses a different way to authenticate,
+		// or the token is invalid, the client either uses a different way to authenticate,
 		// or the endpoint does not require authentication.
-		// Let the endpoint do its regular access checks.
+		// Let the endpoint do its regular access checks, or return an error if provided token was invalid.
 		if ( $this->is_error_response( $payload ) ) {
-			return $user_id;
+			if (
+				$code === 'jwt_auth_no_auth_header' ||
+				$code === 'jwt_auth_bad_auth_header'
+			) {
+				// No token provided, just return $user_id (no error set)
+				return $user_id;
+			} else {
+				// Token was present but invalid, set error
+				$this->jwt_error = $payload;
+				return $user_id;
+			}
 		}
 
 		// Everything is ok here, return the user ID stored in the token.
