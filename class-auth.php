@@ -685,10 +685,13 @@ class Auth {
 		// or the endpoint does not require authentication.
 		// Let the endpoint do its regular access checks, or return an error if provided token was invalid.
 		if ( $this->is_error_response( $payload ) ) {
-			if (
+
+			$code = isset( $payload->data['code'] ) ? $payload->data['code'] : '';
+			
+			if ((
 				$code === 'jwt_auth_no_auth_header' ||
 				$code === 'jwt_auth_bad_auth_header'
-			) {
+			) && apply_filters( 'jwt_auth_error_on_invalid_token', false )) {
 				// No token provided, just return $user_id (no error set)
 				return $user_id;
 			} else {
@@ -696,6 +699,7 @@ class Auth {
 				$this->jwt_error = $payload;
 				return $user_id;
 			}
+
 		}
 
 		// Everything is ok here, return the user ID stored in the token.
